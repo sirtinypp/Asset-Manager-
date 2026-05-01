@@ -21,9 +21,9 @@
             </div>
         </div>
 
-        {% if not active_demo_role or not active_demo_role|slice:":5" == "UNIT_" %}
+        {% if not is_unit_view %}
             {% if user.is_staff %}
-            <a {% if not is_unit_view %}href="{% if not is_unit_view %}{% url 'add_asset' %}{% else %}#disabled{% endif %}"{% else %}style="display:none;"{% endif %} class="btn btn-primary shadow-sm">
+            <a href="{% url 'add_asset' %}" class="btn btn-primary shadow-sm">
                 <i class="fas fa-plus me-2"></i>Add New Asset
             </a>
             {% endif %}
@@ -73,7 +73,7 @@
                         onchange="this.form.submit()">
                         <option value="">All Departments</option>
                         {% for d in all_departments %}
-                        <option value="{{ d.id }}" {% if selected_department  ==  d.id %}selected{% endif %}>{{ d.name }}
+                        <option value="{{ d.id }}" {% if selected_department == d.id %}selected{% endif %}>{{ d.name }}
                         </option>
                         {% endfor %}
                     </select>

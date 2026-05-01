@@ -1,5 +1,6 @@
 {% load static %}
 {% load humanize %}
+{% load inventory_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -369,7 +370,7 @@
             <div class="party-body">
                 <div class="party-row">
                     <span class="party-label">Officer</span>
-                    <span class="party-value" style="font-weight:700;">{{ transfer.current_officer|upper }}</span>
+                    <span class="party-value" style="font-weight:700;">{% mask_name transfer.current_officer "" 0 %}</span>
                 </div>
                 <div class="party-row">
                     <span class="party-label">Office</span>
@@ -387,7 +388,7 @@
             <div class="party-body">
                 <div class="party-row">
                     <span class="party-label">Officer</span>
-                    <span class="party-value" style="font-weight:700;">{{ transfer.new_officer_firstname|upper }} {{ transfer.new_officer_surname|upper }}</span>
+                    <span class="party-value" style="font-weight:700;">{% mask_name transfer.new_officer_firstname transfer.new_officer_surname transfer.id %}</span>
                 </div>
                 <div class="party-row">
                     <span class="party-label">Office</span>
@@ -418,7 +419,7 @@
                     <img src="{{ signatures.approved.img }}" class="sig-image" alt="Signature">
                     {% endif %}
                 </div>
-                <div class="sig-row"><span class="sig-label">Name</span><span class="sig-value" style="font-weight:700;">{{ signatures.approved.name|default:"ISAAC L. BROWN" }}</span></div>
+                <div class="sig-row"><span class="sig-label">Name</span><span class="sig-value" style="font-weight:700;">{% mask_user "approver" %}</span></div>
                 <div class="sig-row"><span class="sig-label">Position</span><span class="sig-value">{{ signatures.approved.pos|default:"Chief, Institutional SPMO" }}</span></div>
                 <div class="sig-row"><span class="sig-label">Date</span><span class="sig-value">{{ signatures.approved.date|date:"Y-m-d"|default:"" }}</span></div>
             </div>
@@ -442,7 +443,7 @@
             <div class="sig3-header">Received By</div>
             <div class="sig3-body">
                 <div class="sig-space"></div>
-                <div class="sig-row"><span class="sig-label">Name</span><span class="sig-value" style="font-weight:700;">{{ transfer.new_officer_firstname|upper }} {{ transfer.new_officer_surname|upper }}</span></div>
+                <div class="sig-row"><span class="sig-label">Name</span><span class="sig-value" style="font-weight:700;">{% mask_name transfer.new_officer_firstname transfer.new_officer_surname transfer.id %}</span></div>
                 <div class="sig-row"><span class="sig-label">Position</span><span class="sig-value">Requesting Unit / End-User</span></div>
                 <div class="sig-row"><span class="sig-label">Date</span><span class="sig-value"></span></div>
             </div>
@@ -486,7 +487,7 @@
                 <td style="font-size:7pt; color:var(--ink-muted);">SPMO Chief</td>
                 <td>
                     {% if signatures.approved.img %}<img src="{{ signatures.approved.img }}" class="sig-inline">{% endif %}
-                    {{ signatures.approved.name|default:"ISAAC L. BROWN" }}
+                    {% mask_user "approver" %}
                 </td>
                 <td>{{ signatures.approved.date|date:"Y-m-d"|default:"" }}</td>
             </tr>
@@ -502,7 +503,7 @@
             <tr>
                 <td>Received by</td>
                 <td style="font-size:7pt; color:var(--ink-muted);">Requesting Unit</td>
-                <td>{{ transfer.new_officer_firstname }} {{ transfer.new_officer_surname }}</td>
+                <td>{% mask_name transfer.new_officer_firstname transfer.new_officer_surname transfer.id %}</td>
                 <td></td>
             </tr>
             <tr>

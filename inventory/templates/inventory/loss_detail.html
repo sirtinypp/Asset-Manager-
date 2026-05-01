@@ -1,4 +1,5 @@
 {% extends 'inventory/base.html' %}
+{% load inventory_tags %}
 
 {% block content %}
 <div class="container-fluid">
@@ -27,7 +28,7 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <p><strong>Requestor:</strong> {{ req.requestor.get_full_name|default:req.requestor.username }}</p>
+                            <p><strong>Requestor:</strong> {% mask_user req.requestor.username %}</p>
                             <p><strong>Date Filed:</strong> {{ req.created_at|date:"Y-m-d" }}</p>
                         </div>
                         <div class="col-md-6">

@@ -1,5 +1,6 @@
 {% extends 'layout.html' %}
 {% load humanize %}
+{% load inventory_tags %}
 
 {% block content %}
 <div id="preview-overlay">
@@ -82,7 +83,7 @@
                 <td class="text-center">{{ asset.property_number }}</td>
                 <td class="text-center">1</td>
                 <td class="text-center">1</td>
-                <td class="text-center">{{ asset.accountable_firstname }} {{ asset.accountable_surname }}</td>
+                <td class="text-center">{% mask_name asset.accountable_firstname asset.accountable_surname asset.id %}</td>
                 <td class="text-center">1</td>
                 <td class="text-end pe-2">₱{{ asset.acquisition_cost|intcomma }}</td>
                 <td></td>

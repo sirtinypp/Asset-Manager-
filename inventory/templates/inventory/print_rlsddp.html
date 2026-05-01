@@ -1,3 +1,4 @@
+{% load inventory_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -50,8 +51,8 @@
             <tr>
                 <td style="width: 60%;">
                     <table class="no-border-table">
-                        <tr><td><strong>Department/Office :</strong></td><td><span class="underline">{{ asset.department.name|default:"____________________" }}</span></td></tr>
-                        <tr><td><strong>Accountable Officer :</strong></td><td><span class="underline">{{ asset.accountable_firstname }} {{ asset.accountable_surname }}</span></td></tr>
+                        <tr><td><strong>Department/Office :</strong></td><td><span class="underline">{% if asset.department %}{% mask_dept asset.department.name asset.department.id %}{% else %}____________________{% endif %}</span></td></tr>
+                        <tr><td><strong>Accountable Officer :</strong></td><td><span class="underline">{% mask_name asset.accountable_firstname asset.accountable_surname asset.id %}</span></td></tr>
                         <tr><td><strong>Designation :</strong></td><td><span class="underline">{{ req.requestor.personas.first.position_title|default:"____________________" }}</span></td></tr>
                         <tr>
                             <td colspan="2" style="padding-top: 10px;">

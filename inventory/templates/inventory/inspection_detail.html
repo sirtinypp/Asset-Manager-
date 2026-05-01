@@ -1,5 +1,6 @@
 {% extends 'inventory/base.html' %}
 {% load humanize %}
+{% load inventory_tags %}
 
 {% block content %}
 <div class="container-fluid">
@@ -29,10 +30,10 @@
                         <div class="col-md-6">
                             <p><strong>Asset:</strong> {{ inspection.asset.property_number }}</p>
                             <p><strong>Description:</strong> {{ inspection.asset.name }}</p>
-                            <p><strong>Requestor:</strong> {{ inspection.requestor.get_full_name|default:inspection.requestor.username }}</p>
+                             <p><strong>Requestor:</strong> {% mask_user inspection.requestor.username %}</p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Unit:</strong> {{ inspection.requestor.userprofile.office|default:"-" }}</p>
+                             <p><strong>Unit:</strong> {% if inspection.requestor.userprofile.department %}{% mask_dept inspection.requestor.userprofile.department.name inspection.requestor.userprofile.department.id %}{% else %}{{ inspection.requestor.userprofile.office|default:"-" }}{% endif %}</p>
                             <p><strong>Date Requested:</strong> {{ inspection.created_at|date:"M d, Y" }}</p>
                         </div>
                     </div>
@@ -90,7 +91,7 @@
                                     formaction="{% url 'approve_inspection_workflow' inspection.id transition.target %}"
                                     class="btn {{ transition.css_class|default:'btn-primary' }} w-100 d-flex align-items-center justify-content-center">
                                 <i class="{{ transition.icon|default:'fas fa-check' }} me-2"></i>
-                                {{ transition.action }}
+                                 {{ transition.action }}
                             </button>
                             {% endfor %}
                         </div>

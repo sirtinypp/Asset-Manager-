@@ -169,8 +169,7 @@
                                 <th style="width: 12%;" class="py-3">Date</th>
                                 <th style="width: 18%;" class="py-3">Requested By</th>
                                 <th style="width: 15%;" class="py-3">Status</th>
-                                <th style="width: 8%;" class="text-center py-3">Details</th>
-                                {% if request.user.is_superuser %}<th style="width: 7%;" class="text-center py-3">Action</th>{% endif %}
+                                <th style="width: 15%;" class="text-center py-3">Operations</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -201,23 +200,21 @@
                                     {% else %}<span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary rounded-pill px-3">Pending</span>{% endif %}
                                 </td>
                                 <td class="text-center">
-                                    <button class="btn btn-sm btn-light border shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#inspect-{{ item.id }}">
-                                        <i class="fas fa-chevron-down text-secondary"></i>
-                                    </button>
-                                </td>
-                                {% if request.user.is_superuser %}
-                                <td class="text-center">
-                                    {% if item.status == 'Pending Inspection' or item.status == 'PENDING' %}
                                     <div class="btn-group shadow-sm">
-                                        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#actionModal" data-action-url="{% url 'update_request_status' pk=item.id action='approve' %}" data-action-type="approve"><i class="fas fa-check"></i></button>
-                                        <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#actionModal" data-action-url="{% url 'update_request_status' pk=item.id action='return' %}" data-action-type="return"><i class="fas fa-undo"></i></button>
+                                        <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="collapse" data-bs-target="#inspect-{{ item.id }}" title="Quick Info">
+                                            <i class="fas fa-chevron-down text-secondary"></i>
+                                        </button>
+                                        {% if request.user.is_superuser and not is_unit_view %}
+                                            {% if item.status == 'Pending Inspection' or item.status == 'PENDING' %}
+                                                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#actionModal" data-action-url="{% url 'update_request_status' pk=item.id action='approve' %}" data-action-type="approve" title="Approve"><i class="fas fa-check"></i></button>
+                                                <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#actionModal" data-action-url="{% url 'update_request_status' pk=item.id action='return' %}" data-action-type="return" title="Return"><i class="fas fa-undo"></i></button>
+                                            {% endif %}
+                                        {% endif %}
                                     </div>
-                                    {% endif %}
                                 </td>
-                                {% endif %}
                             </tr>
                             <tr>
-                                <td colspan="{% if request.user.is_superuser %}7{% else %}6{% endif %}" class="p-0 border-0">
+                                <td colspan="6" class="p-0 border-0">
                                     <div class="collapse bg-body-tertiary border-bottom" id="inspect-{{ item.id }}">
                                         <div class="p-4">
                                             <div class="row">
@@ -263,8 +260,7 @@
                                 <th style="width: 18%;" class="py-3">From Officer</th>
                                 <th style="width: 18%;" class="py-3">To Officer</th>
                                 <th style="width: 15%;" class="py-3">Status</th>
-                                <th style="width: 7%;" class="text-center py-3">Details</th>
-                                {% if request.user.is_superuser %}<th style="width: 7%;" class="text-center py-3">Action</th>{% endif %}
+                                <th style="width: 15%;" class="text-center py-3">Operations</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -290,24 +286,17 @@
                                         <button class="btn btn-sm btn-light border" type="button" data-bs-toggle="collapse" data-bs-target="#transfer-{{ item.id }}" title="Quick View">
                                             <i class="fas fa-chevron-down text-secondary"></i>
                                         </button>
-                                        <a href="{% url 'transfer_detail' item.id %}" class="btn btn-sm btn-light border text-primary" title="Full Detail & Print PTR">
-                                            <i class="fas fa-eye"></i> View
-                                        </a>
+                                        {% if request.user.is_superuser and not is_unit_view %}
+                                            {% if item.status == 'PENDING' %}
+                                                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#actionModal" data-action-url="{% url 'update_transfer_status' pk=item.id action='approve' %}" data-action-type="approve" title="Approve"><i class="fas fa-check"></i></button>
+                                                <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#actionModal" data-action-url="{% url 'update_transfer_status' pk=item.id action='return' %}" data-action-type="return" title="Return"><i class="fas fa-undo"></i></button>
+                                            {% endif %}
+                                        {% endif %}
                                     </div>
                                 </td>
-                                {% if request.user.is_superuser %}
-                                <td class="text-center">
-                                    {% if item.status == 'PENDING' %}
-                                    <div class="btn-group shadow-sm">
-                                        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#actionModal" data-action-url="{% url 'update_transfer_status' pk=item.id action='approve' %}" data-action-type="approve"><i class="fas fa-check"></i></button>
-                                        <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#actionModal" data-action-url="{% url 'update_transfer_status' pk=item.id action='return' %}" data-action-type="return"><i class="fas fa-undo"></i></button>
-                                    </div>
-                                    {% endif %}
-                                </td>
-                                {% endif %}
                             </tr>
                             <tr>
-                                <td colspan="{% if request.user.is_superuser %}8{% else %}7{% endif %}" class="p-0 border-0">
+                                <td colspan="7" class="p-0 border-0">
                                     <div class="collapse bg-body-tertiary border-bottom" id="transfer-{{ item.id }}">
                                         <div class="p-4">
                                             <div class="row">
@@ -315,7 +304,7 @@
                                                     <h6 class="small fw-bold text-body-secondary text-uppercase mb-2">Reason for Transfer</h6>
                                                     <p class="small text-body-emphasis mb-3">{{ item.remarks }}</p>
                                                     <h6 class="small fw-bold text-body-secondary text-uppercase mb-2">Requested By</h6>
-                                                    <p class="small text-body-emphasis mb-3">{{ item.requestor.get_full_name }} ({{ item.requestor.userprofile.office }})</p>
+                                                    <p class="small text-body-emphasis mb-3">{% mask_user item.requestor.username %} ({% mask_dept item.requestor.userprofile.office item.requestor.userprofile.department_id %})</p>
 
                                                     <h6 class="small fw-bold text-body-secondary text-uppercase mb-2">Documents</h6>
                                                     <div class="d-flex gap-2">
@@ -353,8 +342,7 @@
                                 <th style="width: 15%;" class="py-3">Date</th>
                                 <th style="width: 25%;" class="py-3">Requested By</th>
                                 <th style="width: 15%;" class="py-3">Status</th>
-                                <th style="width: 15%;" class="text-center py-3">Action/Review</th>
-                                {% if request.user.is_superuser %}<th style="width: 15%;" class="text-center py-3">Decision</th>{% endif %}
+                                <th style="width: 15%;" class="text-center py-3">Operations</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -365,8 +353,8 @@
                                 <td class="ps-4 fw-bold text-success">{{ batch.transaction_id }}</td>
                                 <td>{{ batch.created_at|date:"M d, Y" }}</td>
                                 <td>
-                                    <div class="fw-semibold text-body-emphasis">{{ batch.requestor.get_full_name|default:batch.requestor.username }}</div>
-                                    <div class="small text-body-secondary">{{ batch.requesting_unit|default:batch.requestor.userprofile.office }}</div>
+                                    <div class="fw-semibold text-body-emphasis">{% mask_user batch.requestor.username %}</div>
+                                    <div class="small text-body-secondary">{% if batch.requesting_unit_obj %}{% mask_dept batch.requesting_unit_obj.name batch.requesting_unit_obj.id %}{% else %}{{ batch.requesting_unit }}{% endif %}</div>
                                 </td>
                                 <td>
                                     {% if batch.status|upper == 'APPROVED' %}<span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3">Approved</span>
@@ -377,33 +365,19 @@
                                 <td class="text-center">
                                     <div class="btn-group shadow-sm">
                                         <button class="btn btn-sm btn-light border" title="Quick Info" type="button" data-bs-toggle="collapse" data-bs-target="#batch-{{ batch.id }}">
-                                            <i class="fas fa-list text-secondary"></i>
+                                            <i class="fas fa-chevron-down text-secondary"></i>
                                         </button>
-                                        <a href="{% url 'batch_detail' pk=batch.id %}" class="btn btn-sm btn-light border text-primary" title="View Approval Path & Timeline">
-                                            <i class="fas fa-project-diagram"></i> Path
-                                        </a>
-                                        
-                                        {% if request.user.is_superuser %}
-                                        <a href="{% url 'process_batch_admin' pk=batch.id %}" class="btn btn-sm btn-light border" title="Edit & Process Action">
-                                            <i class="fas fa-edit text-success"></i>
-                                        </a>
+                                        {% if request.user.is_superuser and not is_unit_view %}
+                                            {% if batch.status == 'PENDING' %}
+                                                <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#actionModal" data-action-url="{% url 'update_batch_status' pk=batch.id action='approve' %}" data-action-type="approve" title="Approve"><i class="fas fa-check"></i></button>
+                                                <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#actionModal" data-action-url="{% url 'update_batch_status' pk=batch.id action='return' %}" data-action-type="return" title="Return"><i class="fas fa-undo"></i></button>
+                                            {% endif %}
                                         {% endif %}
                                     </div>
                                 </td>
-
-                                {% if request.user.is_superuser %}
-                                <td class="text-center">
-                                    {% if batch.status == 'PENDING' %}
-                                    <div class="btn-group shadow-sm">
-                                        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#actionModal" data-action-url="{% url 'update_batch_status' pk=batch.id action='approve' %}" data-action-type="approve"><i class="fas fa-check"></i></button>
-                                        <button class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#actionModal" data-action-url="{% url 'update_batch_status' pk=batch.id action='return' %}" data-action-type="return"><i class="fas fa-undo"></i></button>
-                                    </div>
-                                    {% endif %}
-                                </td>
-                                {% endif %}
                             </tr>
                             <tr>
-                                <td colspan="{% if request.user.is_superuser %}6{% else %}5{% endif %}" class="p-0 border-0">
+                                <td colspan="5" class="p-0 border-0">
                                     <div class="collapse bg-body-tertiary border-bottom" id="batch-{{ batch.id }}">
                                         <div class="p-4">
                                             <div class="row">
@@ -472,7 +446,7 @@
                                 <th style="width: 15%;" class="py-3">Date</th>
                                 <th style="width: 20%;" class="py-3">Requested By</th>
                                 <th style="width: 15%;" class="py-3">Status</th>
-                                <th style="width: 10%;" class="text-center py-3">Action</th>
+                                <th style="width: 10%;" class="text-center py-3">Operations</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -513,7 +487,7 @@
                                 <th style="width: 15%;" class="py-3">Date</th>
                                 <th style="width: 20%;" class="py-3">Requested By</th>
                                 <th style="width: 15%;" class="py-3">Status</th>
-                                <th style="width: 10%;" class="text-center py-3">Action</th>
+                                <th style="width: 10%;" class="text-center py-3">Operations</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -554,7 +528,7 @@
                                 <th style="width: 15%;" class="py-3">Date</th>
                                 <th style="width: 20%;" class="py-3">Purpose</th>
                                 <th style="width: 15%;" class="py-3">Status</th>
-                                <th style="width: 10%;" class="text-center py-3">Action</th>
+                                <th style="width: 10%;" class="text-center py-3">Operations</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -564,8 +538,8 @@
                                 style="cursor: pointer; transition: background 0.1s ease;">
                                 <td class="ps-4 fw-bold text-info">{{ item.transaction_id }}</td>
                                 <td>
-                                    <div class="fw-bold text-body-emphasis">{{ item.requestor.get_full_name|default:item.requestor.username }}</div>
-                                    <div class="small text-body-secondary">{{ item.requestor.userprofile.office|default:"-" }}</div>
+                                    <div class="fw-bold text-body-emphasis">{% mask_user item.requestor.username %}</div>
+                                    <div class="small text-body-secondary">{% if item.requestor.userprofile.department %}{% mask_dept item.requestor.userprofile.department.name item.requestor.userprofile.department.id %}{% else %}{{ item.requestor.userprofile.office|default:"-" }}{% endif %}</div>
                                 </td>
                                 <td>{{ item.created_at|date:"M d, Y" }}</td>
                                 <td>{{ item.purpose|truncatechars:30 }}</td>

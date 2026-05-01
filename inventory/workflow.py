@@ -87,7 +87,7 @@ class WorkflowEngine:
         return []
 
     @staticmethod
-    def get_allowed_transitions(transaction, user):
+    def get_allowed_transitions(transaction, user, demo_role=None):
         """Returns the permitted next steps for the given transaction and user."""
         allowed_transitions = []
         current_step = transaction.current_step
@@ -98,13 +98,24 @@ class WorkflowEngine:
         signatory_roles = list(current_step.signatory_slots.all().values_list('role', flat=True))
         
         has_permission = False
-        if required_role:
-             has_permission = Persona.objects.filter(user=user, role=required_role, is_active=True).exists()
         
-        if not has_permission and signatory_roles:
-             has_permission = Persona.objects.filter(user=user, role__id__in=signatory_roles, is_active=True).exists()
+        # DEMO MODE GATING: If a demo_role is active, we check ONLY that role.
+        if demo_role:
+             if required_role and required_role.code == demo_role:
+                 has_permission = True
+             elif signatory_roles:
+                 from workflow.models import Role
+                 has_permission = Role.objects.filter(id__in=signatory_roles, code=demo_role).exists()
+        else:
+            # Standard Permission Logic
+            if required_role:
+                 has_permission = Persona.objects.filter(user=user, role=required_role, is_active=True).exists()
+            
+            if not has_permission and signatory_roles:
+                 has_permission = Persona.objects.filter(user=user, role__id__in=signatory_roles, is_active=True).exists()
 
-        if has_permission or user.is_superuser:
+        # Final check: Superuser god-mode is disabled if we are explicitly testing a demo role
+        if has_permission or (user.is_superuser and not demo_role):
                 # 1. Forward Move (Next Step)
                 next_step = WorkflowStep.objects.filter(
                     phase__workflow=current_step.phase.workflow,
@@ -189,6 +200,7 @@ class WorkflowEngine:
     @staticmethod
     def transition(transaction, target_step_id_or_action, user, remarks='', **kwargs):
         """Executes a specific workflow transition, strictly enforcing DB rules."""
+        demo_role = kwargs.get('demo_role')
         current_step = transaction.current_step
         if not current_step:
             raise ValidationError("Transaction has no current workflow step.")
@@ -198,16 +210,34 @@ class WorkflowEngine:
         signatory_roles = list(current_step.signatory_slots.all().values_list('role', flat=True))
         
         active_persona = None
-        
-        # Check primary role
-        if required_role:
-            active_persona = Persona.objects.filter(user=user, role=required_role, is_active=True).first()
-            
-        # Fallback to signatory slots if primary is not met
-        if not active_persona and signatory_roles:
-            active_persona = Persona.objects.filter(user=user, role__id__in=signatory_roles, is_active=True).first()
+        has_demo_permission = False
 
-        if not active_persona and not user.is_superuser:
+        if demo_role:
+            # In demo mode, we simulate the persona based on the code
+            from workflow.models import Role
+            simulated_role = Role.objects.filter(code=demo_role).first()
+            if simulated_role:
+                # Check if this simulated role matches required or signatories
+                if required_role and required_role.code == demo_role:
+                    has_demo_permission = True
+                elif signatory_roles and simulated_role.id in signatory_roles:
+                    has_demo_permission = True
+                
+                if has_demo_permission:
+                    # Try to find a real persona for this user/role if it exists, otherwise mock it
+                    active_persona = Persona.objects.filter(user=user, role=simulated_role, is_active=True).first()
+        else:
+            # Standard path
+            if required_role:
+                active_persona = Persona.objects.filter(user=user, role=required_role, is_active=True).first()
+                
+            if not active_persona and signatory_roles:
+                active_persona = Persona.objects.filter(user=user, role__id__in=signatory_roles, is_active=True).first()
+
+        # Final Permission Check
+        is_authorized = active_persona or has_demo_permission or (user.is_superuser and not demo_role)
+
+        if not is_authorized:
             role_names = [required_role.name] if required_role else []
             if signatory_roles:
                 from workflow.models import Role

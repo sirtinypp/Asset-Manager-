@@ -5,7 +5,9 @@ register = template.Library()
 
 @register.simple_tag(takes_context=True)
 def query_transform(context, **kwargs):
-    request = context['request']
+    request = context.get('request')
+    if not request:
+        return ''
     updated = request.GET.copy()
     for k, v in kwargs.items():
         if v is not None:

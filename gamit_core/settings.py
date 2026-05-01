@@ -78,6 +78,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'inventory.context_processors.demo_context',
                 'inventory.context_processors.pending_count',
                 'inventory.context_processors.unread_notifications',
                 'inventory.context_processors.suite_wide_perms',

@@ -29,14 +29,14 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <p><strong>Requestor:</strong> {{ transfer.requestor.get_full_name|default:transfer.requestor.username }}</p>
+                            <p><strong>Requestor:</strong> {% mask_user transfer.requestor.username %}</p>
                             <p><strong>Date:</strong> {{ transfer.created_at|date:"F d, Y" }}</p>
                             <p><strong>Status:</strong> {{ transfer.get_status_display }}</p>
                         </div>
                         <div class="col-md-6">
                             <p><strong>Asset:</strong> {{ transfer.asset.property_number }} — {{ transfer.asset.name }}</p>
                             <p><strong>Current Officer:</strong> {{ transfer.current_officer }}</p>
-                            <p><strong>New Officer:</strong> {{ transfer.new_officer_firstname }} {{ transfer.new_officer_surname }}</p>
+                            <p><strong>New Officer:</strong> {% mask_name transfer.new_officer_firstname transfer.new_officer_surname transfer.id %}</p>
                         </div>
                     </div>
                     {% if transfer.remarks %}
@@ -66,7 +66,7 @@
                             <p><strong>PPE Category:</strong> {{ transfer.asset.get_asset_class_display }}</p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Department:</strong> {{ transfer.asset.department.name|default:"—" }}</p>
+                            <p><strong>Department:</strong> {% if transfer.asset.department %}{% mask_dept transfer.asset.department.name transfer.asset.department.id %}{% else %}—{% endif %}</p>
                             <p><strong>Date Acquired:</strong> {{ transfer.asset.date_acquired|date:"Y-m-d" }}</p>
                             <p><strong>Acquisition Cost:</strong> {% if transfer.asset.acquisition_cost %}₱{{ transfer.asset.acquisition_cost|floatformat:2 }}{% else %}—{% endif %}</p>
                         </div>

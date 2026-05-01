@@ -1,4 +1,5 @@
 {% load humanize %}
+{% load inventory_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -260,7 +261,7 @@
     </div>
 
     <div class="meta-grid">
-        <div class="meta-item"><span class="label">ENTITY NAME / UNIT:</span><span class="value">{{ batch.requesting_unit }}</span></div>
+        <div class="meta-item"><span class="label">ENTITY NAME / UNIT:</span><span class="value">{% mask_dept batch.requesting_unit 0 %}</span></div>
         <div class="meta-item"><span class="label">PAR NO.:</span><span class="value">{{ batch.transaction_id }}</span></div>
         <div class="meta-item"><span class="label">FUND CLUSTER:</span><span class="value">{{ batch.fund_cluster|default:"" }}</span></div>
         <div class="meta-item"><span class="label">Internal DV NO.:</span><span class="value">{{ batch.ups_dv_number|default:"" }}</span></div>
@@ -315,9 +316,9 @@
             <div class="sig-content">
                 <div class="signature-space"></div>
                 <div class="sig-field"><span class="label">SIGNATURE:</span><div class="value"></div></div>
-                <div class="sig-field"><span class="label">PRINTED NAME:</span><div class="value">{{ received_name|upper }}</div></div>
+                <div class="sig-field"><span class="label">PRINTED NAME:</span><div class="value">{% mask_name received_name "" 0 %}</div></div>
                 <div class="sig-field"><span class="label">POSITION:</span><div class="value">{{ batch.items.first.custodian_position|default:received_by_position }}</div></div>
-                <div class="sig-field"><span class="label">OFFICE:</span><div class="value">{{ batch.requesting_unit }}</div></div>
+                <div class="sig-field"><span class="label">OFFICE:</span><div class="value">{% mask_dept batch.requesting_unit 0 %}</div></div>
                 <div class="sig-field"><span class="label">DATE:</span><div class="value"></div></div>
             </div>
         </div>
@@ -327,7 +328,7 @@
             <div class="sig-content">
                 <div class="signature-space"></div>
                 <div class="sig-field"><span class="label">SIGNATURE:</span><div class="value"></div></div>
-                <div class="sig-field"><span class="label">PRINTED NAME:</span><div class="value">{{ issued_by_name|upper }}</div></div>
+                <div class="sig-field"><span class="label">PRINTED NAME:</span><div class="value">{% mask_name issued_by_name "" 0 %}</div></div>
                 <div class="sig-field"><span class="label">POSITION:</span><div class="value">{{ issued_by_position }}</div></div>
                 <div class="sig-field"><span class="label">OFFICE:</span><div class="value">UPS SPMO</div></div>
                 <div class="sig-field"><span class="label">DATE:</span><div class="value"></div></div>
@@ -343,10 +344,10 @@
     <p class="note">Note: Person receiving must be a PERMANENT EMPLOYEE.</p>
 
     <div class="footer-grid">
-        <div class="label">Prepared by:</div><div class="underline">EDWARD T. SMITH Jr</div><div class="text-right">Date:</div><div class="underline">{{ batch.created_at|date:"Y-m-d" }}</div>
-        <div class="label">Inspected by:</div><div class="underline">Mark Joshua Pedrosa</div><div class="text-right">Date:</div><div class="underline"></div>
-        <div class="label">Reviewed by:</div><div class="underline">JULIAN M. DAVIS</div><div class="text-right">Date:</div><div class="underline"></div>
-        <div class="label">Posted by:</div><div class="underline">Aaron Basa - thru Asset Manager</div><div class="text-right">Date:</div><div class="underline">{{ batch.created_at|date:"Y-m-d" }}</div>
+        <div class="label">Prepared by:</div><div class="underline">{% mask_user "preparer" %}</div><div class="text-right">Date:</div><div class="underline">{{ batch.created_at|date:"Y-m-d" }}</div>
+        <div class="label">Inspected by:</div><div class="underline">{% mask_user "inspector" %}</div><div class="text-right">Date:</div><div class="underline"></div>
+        <div class="label">Reviewed by:</div><div class="underline">{% mask_user "reviewer" %}</div><div class="text-right">Date:</div><div class="underline"></div>
+        <div class="label">Posted by:</div><div class="underline">{% mask_user "poster" %}</div><div class="text-right">Date:</div><div class="underline">{{ batch.created_at|date:"Y-m-d" }}</div>
     </div>
 </div>
 

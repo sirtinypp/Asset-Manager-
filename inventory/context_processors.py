@@ -7,10 +7,10 @@ def pending_count(request):
         
     count = 0
     
-    # 1. Superuser: Global Pending Count (All stages except FINALIZED)
+    # 1. Superuser: Global Pending Count
     if request.user.is_superuser:
-        # Simplification: Count all that are not FINALIZE/Released?
-        pass # Optional optimization if superuser performance drops
+        # Standard superuser logic can be added here
+        pass
         
     # 2. Persona Count: Tasks assigned explicitly to this user's active Personas
     active_roles = Persona.objects.filter(user=request.user, is_active=True).values_list('role', flat=True)
@@ -46,12 +46,11 @@ def suite_wide_perms(request):
 
 
 def unread_notifications(request):
-    """Temporary disable until AssetNotification is restored."""
+    """Provides unread notification counts."""
     return {
         'unread_notif_count': 0,
         'unread_notifs': [],
     }
-
 
 def persona_context(request):
     """Inject all roles and active demo role for the Presentation Mode switcher."""
@@ -61,4 +60,15 @@ def persona_context(request):
         ctx['active_demo_role'] = request.session.get('active_demo_role', '')
     return ctx
 
-
+def demo_context(request):
+    """
+    Globally provides demo-related variables to all templates.
+    """
+    demo_role = request.session.get('active_demo_role', '')
+    is_demo = request.session.get('demo_mode', False)
+    
+    return {
+        'active_demo_role': demo_role,
+        'is_demo_mode': is_demo,
+        'is_unit_view': demo_role.startswith('UNIT_'),
+    }

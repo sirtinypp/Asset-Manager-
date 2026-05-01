@@ -1,4 +1,5 @@
 {% load humanize %}
+{% load inventory_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -144,7 +145,7 @@
         <div>
             <div class="info-row"><span class="label">Supplier</span><span class="value">{{ batch.supplier_name|default:"&nbsp;" }}</span></div>
             <div class="info-row"><span class="label">PO Number</span><span class="value">{{ batch.po_number|default:"&nbsp;" }}</span></div>
-            <div class="info-row"><span class="label">Req. Unit</span><span class="value">{{ batch.requesting_unit|default:"&nbsp;" }}</span></div>
+            <div class="info-row"><span class="label">Req. Unit</span><span class="value">{% if batch.requesting_unit %}{% mask_dept batch.requesting_unit 0 %}{% else %}&nbsp;{% endif %}</span></div>
         </div>
         <div>
             <div class="info-row"><span class="label">AR Number</span><span class="value">{{ batch.acceptance_report_number|default:"&nbsp;" }}</span></div>
@@ -203,7 +204,7 @@
             </div>
             <div class="signature-block">
                 <div class="signature-line">
-                    <div class="signatory-name">{{ inspection_officer }}</div>
+                    <div class="signatory-name">{% mask_name inspection_officer "" 0 %}</div>
                     <div class="signatory-pos">{{ inspection_position }}</div>
                 </div>
             </div>

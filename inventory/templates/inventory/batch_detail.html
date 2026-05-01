@@ -71,7 +71,7 @@
                                 <td>{{ item.quantity }}</td>
                                 <td>{{ item.unit|default:"-" }}</td>
                                 <td>{{ item.description }}</td>
-                                <td>{{ item.assigned_custodian|default:"-" }}</td>
+                                <td>{% mask_name item.assigned_custodian "" 0 %}</td>
                                 <td class="text-end">₱{{ item.amount|floatformat:2|intcomma }}</td>
                                 <td class="text-end fw-bold">₱{{ item.total_price|floatformat:2|intcomma }}</td>
                             </tr>

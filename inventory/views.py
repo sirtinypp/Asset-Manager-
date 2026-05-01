@@ -174,6 +174,8 @@ def dashboard(request):
         'selected_class': selected_class,
         'selected_nature': selected_nature,
         'selected_status': selected_status,
+        'active_demo_role': demo_role,
+        'is_unit_view': demo_role.startswith('UNIT_') if demo_role else False,
         # Dropdown Options
         'all_classes': all_classes,
         'all_natures': all_natures,
@@ -317,7 +319,9 @@ def asset_list(request):
         'selected_class': selected_class,
         'selected_nature': selected_nature,
         'selected_status': selected_status,
-        'selected_department': int(selected_department) if selected_department else '',
+        'selected_department': int(selected_department) if (selected_department and selected_department.isdigit()) else '',
+        'active_demo_role': demo_role,
+        'is_unit_view': demo_role.startswith('UNIT_') if demo_role else False,
         
         # Sorting
         'sort_by': sort_by,
@@ -613,8 +617,7 @@ def transaction_history(request):
     from workflow.models import Persona
     
     # --- PERSONA-AWARE FILTERING (SEP) ---
-    demo_role_code = getattr(request.user, 'active_demo_role', None)
-    demo_persona = getattr(request.user, 'demo_persona', None)
+    demo_role_code = request.session.get('active_demo_role')
     
     if request.user.is_superuser and not demo_role_code:
         # Superuser God View: All transactions
@@ -627,11 +630,16 @@ def transaction_history(request):
     else:
         # Determine effective roles (demo role takes precedence)
         if demo_role_code:
-            effective_roles = [demo_persona.role.id] if demo_persona and demo_persona.role else []
-            effective_user = demo_persona.user if demo_persona else request.user
+             # Look for a persona matching this role for the current user (if any)
+             demo_persona = Persona.objects.filter(user=request.user, role__code=demo_role_code, is_active=True).first()
+             from workflow.models import Role
+             role_obj = Role.objects.filter(code=demo_role_code).first()
+             effective_roles = [role_obj.id] if role_obj else []
+             effective_user = request.user # Keep actual user for requestor filtering
         else:
             effective_roles = Persona.objects.filter(user=request.user, is_active=True).values_list('role', flat=True)
             effective_user = request.user
+            demo_persona = None # Not in demo mode or no demo persona found
 
         # Base queries (transactions involving the effective user)
         inspections = InspectionRequest.objects.filter(requestor=effective_user)
@@ -659,9 +667,13 @@ def transaction_history(request):
 
         # UNIT FILTERING: If acting as a unit role, restrict by department
         if demo_role_code and demo_role_code.startswith('UNIT_'):
-            persona = getattr(request.user, 'demo_persona', None)
-            if persona and persona.department:
-                dept = persona.department
+            # Fetch the department from the active persona
+            dept = None
+            if demo_persona and demo_persona.department:
+                dept = demo_persona.department
+            
+            if dept:
+                # Show all transactions for the department (realistic office POV)
                 inspections = inspections.filter(requestor__userprofile__department=dept)
                 batches = batches.filter(requestor__userprofile__department=dept)
                 transfers = transfers.filter(requestor__userprofile__department=dept)
@@ -669,13 +681,13 @@ def transaction_history(request):
                 losses = losses.filter(requestor__userprofile__department=dept)
                 clearances = clearances.filter(requestor__userprofile__department=dept)
             else:
-                # If no department is found for the Unit role, show nothing (fail-safe)
-                inspections = Asset.objects.none()
-                batches = Asset.objects.none()
-                transfers = Asset.objects.none()
-                returns = Asset.objects.none()
-                losses = Asset.objects.none()
-                clearances = Asset.objects.none()
+                # Individual fallback if no department assigned to persona
+                inspections = inspections.filter(requestor=request.user)
+                batches = batches.filter(requestor=request.user)
+                transfers = transfers.filter(requestor=request.user)
+                returns = returns.filter(requestor=request.user)
+                losses = losses.filter(requestor=request.user)
+                clearances = clearances.filter(requestor=request.user)
     # -------------------------------------
 
     # Calculate real-time metrics for the Smart Dashboard
@@ -740,7 +752,12 @@ def transaction_ledger(request):
 
     # --- PERSONA-AWARE FILTERING (SEP) ---
     demo_role = request.session.get('active_demo_role')
-    persona = getattr(request.user, 'demo_persona', None)
+    
+    # Retrieve persona object if in demo mode
+    persona = None
+    if demo_role:
+        from workflow.models import Persona
+        persona = Persona.objects.filter(user=request.user, role__code=demo_role, is_active=True).first()
     
     # Global Admin is ONLY the real Superuser NOT in demo mode
     is_global_admin = request.user.is_superuser and not demo_role
@@ -764,7 +781,7 @@ def transaction_ledger(request):
                 # Department Isolation: See all transactions in the office
                 qs = model.objects.filter(requestor__userprofile__department=dept)
             else:
-                # Individual Isolation: See only own transactions
+                # Individual Isolation: See only own transactions (for Standard Users without dept)
                 qs = model.objects.filter(requestor=request.user)
             
             # Plus items where the current persona is required for the next step (Inbox)
@@ -879,6 +896,7 @@ def transaction_ledger(request):
                 'asset_label': a_label,
                 'asset_name': a_name,
                 'requestor_name': obj.requestor.get_full_name() or obj.requestor.username,
+                'requestor_username': obj.requestor.username,
                 'created_at': obj.created_at,
                 'raw_status': raw_status,
                 'norm_status': normalize_status(raw_status),
@@ -1070,7 +1088,7 @@ def transfer_detail(request, pk):
     transfer = get_object_or_404(AssetTransferRequest, pk=pk)
 
     try:
-        allowed_transitions = WorkflowEngine.get_allowed_transitions(transfer, request.user)
+        allowed_transitions = WorkflowEngine.get_allowed_transitions(transfer, request.user, demo_role=request.session.get('active_demo_role'))
         workflow_steps = WorkflowEngine.get_workflow_steps(transfer)
     except Exception:
         allowed_transitions = []
@@ -1375,7 +1393,7 @@ def batch_detail(request, pk):
     
     # Determine allowed transitions for current user based on DB setup
     try:
-        allowed_transitions = WorkflowEngine.get_allowed_transitions(batch, request.user)
+        allowed_transitions = WorkflowEngine.get_allowed_transitions(batch, request.user, demo_role=request.session.get('active_demo_role'))
         workflow_steps = WorkflowEngine.get_workflow_steps(batch)
     except Exception as e:
         print(f"Workflow logic error: {e}")
@@ -1384,11 +1402,11 @@ def batch_detail(request, pk):
 
     return render(request, 'inventory/batch_detail.html', {
         'batch': batch,
+        'req': batch,
         'items': items,
         'logs': logs,
         'allowed_transitions': allowed_transitions,
         'workflow_steps': workflow_steps
-
     })
 
 @login_required
@@ -1407,7 +1425,7 @@ def approve_batch_workflow(request, pk, target_state):
             manual_sig = request.FILES.get('manual_signature')
             
             # Execute Transition
-            WorkflowEngine.transition(batch, target_state, request.user, remarks=remarks, manual_signature=manual_sig)
+            WorkflowEngine.transition(batch, target_state, request.user, remarks=remarks, manual_signature=manual_sig, demo_role=request.session.get('active_demo_role'))
             
             messages.success(request, f"Workflow step executed successfully!")
             
@@ -1450,7 +1468,7 @@ def inspection_detail(request, pk):
     inspection = get_object_or_404(InspectionRequest, pk=pk)
     
     try:
-        allowed_transitions = WorkflowEngine.get_allowed_transitions(inspection, request.user)
+        allowed_transitions = WorkflowEngine.get_allowed_transitions(inspection, request.user, demo_role=request.session.get('active_demo_role'))
         workflow_steps = WorkflowEngine.get_workflow_steps(inspection)
     except Exception:
         allowed_transitions = []
@@ -1469,7 +1487,7 @@ def approve_inspection_workflow(request, pk, target_state):
     if request.method == 'POST':
         try:
             remarks = request.POST.get('remarks', '')
-            WorkflowEngine.transition(inspection, target_state, request.user, remarks=remarks)
+            WorkflowEngine.transition(inspection, target_state, request.user, remarks=remarks, demo_role=request.session.get('active_demo_role'))
             messages.success(request, f"Workflow step executed successfully!")
         except Exception as e:
             messages.error(request, f"Error: {str(e)}")
@@ -1480,7 +1498,7 @@ def return_detail(request, pk):
     req = get_object_or_404(AssetReturnRequest, pk=pk)
     logs = req.movement_logs.all().order_by('-timestamp')
     try:
-        allowed_transitions = WorkflowEngine.get_allowed_transitions(req, request.user)
+        allowed_transitions = WorkflowEngine.get_allowed_transitions(req, request.user, demo_role=request.session.get('active_demo_role'))
         workflow_steps = WorkflowEngine.get_workflow_steps(req)
     except Exception as e:
         allowed_transitions = []
@@ -1494,7 +1512,7 @@ def approve_return_workflow(request, pk, target_state):
     req = get_object_or_404(AssetReturnRequest, pk=pk)
     if request.method == 'POST':
         try:
-            WorkflowEngine.transition(req, target_state, request.user)
+            WorkflowEngine.transition(req, target_state, request.user, demo_role=request.session.get('active_demo_role'))
             messages.success(request, "Workflow step executed successfully.")
         except Exception as e:
             messages.error(request, f"Error: {str(e)}")
@@ -1523,13 +1541,17 @@ def loss_detail(request, pk):
     req = get_object_or_404(AssetLossReport, pk=pk)
     logs = req.movement_logs.all().order_by('-timestamp')
     try:
-        allowed_transitions = WorkflowEngine.get_allowed_transitions(req, request.user)
+        allowed_transitions = WorkflowEngine.get_allowed_transitions(req, request.user, demo_role=request.session.get('active_demo_role'))
         workflow_steps = WorkflowEngine.get_workflow_steps(req)
     except Exception as e:
         allowed_transitions = []
         workflow_steps = []
     return render(request, 'inventory/loss_detail.html', {
-        'req': req, 'logs': logs, 'allowed_transitions': allowed_transitions, 'workflow_steps': workflow_steps
+        'req': req, 
+        'loss': req,
+        'logs': logs, 
+        'allowed_transitions': allowed_transitions, 
+        'workflow_steps': workflow_steps
     })
 
 @login_required
@@ -1545,7 +1567,7 @@ def approve_loss_workflow(request, pk, target_state):
     req = get_object_or_404(AssetLossReport, pk=pk)
     if request.method == 'POST':
         try:
-            WorkflowEngine.transition(req, target_state, request.user)
+            WorkflowEngine.transition(req, target_state, request.user, demo_role=request.session.get('active_demo_role'))
             messages.success(request, "Workflow step executed successfully.")
         except Exception as e:
             messages.error(request, f"Error: {str(e)}")
@@ -1574,7 +1596,7 @@ def clearance_detail(request, pk):
     req = get_object_or_404(PropertyClearanceRequest, pk=pk)
     logs = req.movement_logs.all().order_by('-timestamp')
     try:
-        allowed_transitions = WorkflowEngine.get_allowed_transitions(req, request.user)
+        allowed_transitions = WorkflowEngine.get_allowed_transitions(req, request.user, demo_role=request.session.get('active_demo_role'))
         workflow_steps = WorkflowEngine.get_workflow_steps(req)
     except Exception as e:
         allowed_transitions = []
@@ -1588,7 +1610,7 @@ def approve_clearance_workflow(request, pk, target_state):
     req = get_object_or_404(PropertyClearanceRequest, pk=pk)
     if request.method == 'POST':
         try:
-            WorkflowEngine.transition(req, target_state, request.user)
+            WorkflowEngine.transition(req, target_state, request.user, demo_role=request.session.get('active_demo_role'))
             messages.success(request, "Workflow step executed successfully.")
         except Exception as e:
             messages.error(request, f"Error: {str(e)}")

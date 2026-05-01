@@ -1,5 +1,6 @@
 {% extends 'layout.html' %}
 {% load humanize %}
+{% load inventory_tags %}
 
 {% block content %}
 <div class="container-fluid fade-in">
@@ -130,7 +131,7 @@
                             <div class="fw-bold text-body-emphasis text-truncate" style="max-width:220px;">{{ row.asset_label }}</div>
                             {% if row.asset_name %}<div class="small text-body-secondary text-truncate" style="max-width:220px;">{{ row.asset_name }}</div>{% endif %}
                         </td>
-                        <td class="text-body-secondary">{{ row.requestor_name }}</td>
+                        <td class="text-body-secondary">{% mask_user row.requestor_username %}</td>
                         <td class="text-body-secondary">{{ row.created_at|date:"M d, Y" }}</td>
                         <td>
                             {% if row.norm_status == 'Approved' %}

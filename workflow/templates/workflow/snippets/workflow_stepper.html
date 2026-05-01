@@ -9,7 +9,7 @@
         <div class="d-flex gap-2">
             <span class="badge bg-light text-dark border rounded-pill px-3">
                 <i class="fas fa-map-marker-alt text-primary me-1"></i>
-                Current: {{ batch.current_step.label|default:batch.status }}
+                Current: {{ req.current_step.label|default:req.status }}
             </span>
         </div>
     </div>
