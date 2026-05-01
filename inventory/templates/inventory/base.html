@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Manager</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    {% load static %}
+    <link rel="icon" type="image/png" href="{% static 'inventory/img/favicon.png' %}">
+
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --sidebar-bg: #0f172a;
+            /* Deep midnight blue */
+            --sidebar-text: #94a3b8;
+            /* Soft blue-grey */
+            --primary-accent: #3b82f6;
+            /* Modern bright blue */
+            --bg-body: #f1f5f9;
+            /* Very light grey/blue tint */
+        }
+
+        body {
+            background-color: var(--bg-body);
+            font-family: 'Inter', sans-serif;
+            color: #334155;
+            font-size: 0.85rem;
+        }
+
+        .sub-link.active::before {
+            background-color: var(--primary-accent);
+            opacity: 1;
+            box-shadow: 0 0 6px var(--primary-accent);
+        }
+
+        /* --- Collapsible Submenu Styling (Restored) --- */
+        .sidebar-accordion {
+            background: transparent;
+            border: none;
+        }
+
+        .sidebar-accordion .accordion-item {
+            background: transparent;
+            border: none;
+            margin-bottom: 2px;
+        }
+
+        .sidebar-accordion .accordion-button {
+            background: transparent;
+            color: var(--sidebar-text);
+            padding: 10px 16px;
+            box-shadow: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-accordion .accordion-button:not(.collapsed) {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-accordion .accordion-button:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-accordion .accordion-button::after {
+            filter: invert(0.8) sepia(0) saturate(1) hue-rotate(0deg) brightness(1.2);
+            transform: scale(0.8);
+        }
+
+        .sub-menu {
+            list-style: none;
+            padding-left: 0;
+            margin-top: 4px;
+            margin-bottom: 4px;
+        }
+
+        .sub-link {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px 8px 46px;
+            /* indent past the icon */
+            color: var(--sidebar-text);
+            text-decoration: none;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .sub-link::before {
+            content: '';
+            position: absolute;
+            left: 26px;
+            top: 50%;
+            width: 4px;
+            height: 4px;
+            background-color: var(--sidebar-text);
+            border-radius: 50%;
+            transform: translateY(-50%);
+            opacity: 0.5;
+        }
+
+        .sub-link:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .sub-link:hover::before {
+            background-color: var(--primary-accent);
+            opacity: 1;
+        }
+
+        .sub-link.active {
+            color: var(--primary-accent);
+            font-weight: 600;
+        }
+
+        /* --- Sidebar Styling --- */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            z-index: 1000;
+            padding: 24px 16px;
+            background-color: var(--sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.05);
+        }
+
+        .sidebar-brand {
+            color: #fff;
+            padding: 0 12px 24px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 16px;
+        }
+
+        /* Navigation Links */
+        .nav-link {
+            color: var(--sidebar-text);
+            margin-bottom: 4px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            /* "Pill" shape */
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .nav-link i {
+            width: 24px;
+            text-align: center;
+            margin-right: 12px;
+            font-size: 1.1em;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        /* Hover State */
+        .nav-link:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(4px);
+            /* Subtle movement */
+        }
+
+        .nav-link:hover i {
+            opacity: 1;
+        }
+
+        /* Active State */
+        .nav-link.active {
+            background-color: var(--primary-accent);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            /* Glowing effect */
+        }
+
+        .nav-link.active i {
+            opacity: 1;
+        }
+
+        /* --- Main Content --- */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            padding: 32px;
+            transition: margin-left 0.3s ease;
+        }
+        body.no-sidebar .main-content {
+            margin-left: 0;
+            padding: 15px;
+        }
+
+        /* Utility */
+        .section-label {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            color: #475569;
+            font-weight: 700;
+            margin-top: 24px;
+            margin-bottom: 8px;
+            padding-left: 12px;
+        }
+
+        /* Smooth fade in for pages */
+        .fade-in {
+            animation: fadeIn 0.4s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+</head>
+
+<body {% if no_sidebar %}class="no-sidebar"{% endif %}>
+
+    {% if not no_sidebar %}
+    {% include 'inventory/snippets/sidebar_nav.html' with show_theme_toggle=False %}
+    {% endif %}
+
+    <main class="main-content">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Session Timeout Script (Standardized) -->
+    <script src="{% static 'js/session_timeout.js' %}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            initSessionTimeout({
+                logoutUrl: "{% url 'logout' %}",
+                loginUrl: "{% url 'login' %}", // Target: Asset Manager Login
+                sessionMinutes: 10,
+                warningMinutes: 9
+            });
+        });
+    </script>
+
+    <script>
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    </script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.select2-asset').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Type to search asset...',
+                allowClear: true,
+                width: '100%'
+            });
+        });
+    </script>
+</body>
+
+</html>

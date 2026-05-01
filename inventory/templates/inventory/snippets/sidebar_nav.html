@@ -1,0 +1,236 @@
+{% load static %}
+{% load inventory_tags %}
+<style>
+    /* Nuclear Hide Scrollbar (Internalized) */
+    .sidebar-body {
+        -ms-overflow-style: none !important;
+        scrollbar-width: none !important;
+    }
+    .sidebar-body::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+</style>
+
+<nav class="sidebar">
+    <!-- 1. FIXED HEADER ZONE -->
+    <div class="sidebar-header">
+        <div class="sidebar-brand">
+            <div class="d-flex align-items-center mb-2">
+                <i class="fas fa-boxes-stacked me-2" style="font-size: 24px; color: #fff;"></i>
+                <h4 class="fw-bold mb-0 tracking-tight text-white">Asset Manager</h4>
+            </div>
+            <div class="small" style="color: var(--sidebar-text); font-size: 0.65rem; line-height: 1.3; letter-spacing: 0.01rem; font-family: 'Inter', sans-serif; font-weight: 500;">
+                Institutional SPMO & Tracking
+            </div>
+        </div>
+
+        <!-- User Profile & Theme Toggle -->
+        <div class="d-flex align-items-center px-3 py-3 mb-3 rounded-3 justify-content-between" style="background: rgba(255,255,255,0.03);">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle bg-secondary d-flex justify-content-center align-items-center text-white fw-bold me-3"
+                    style="width: 32px; height: 32px;">
+                    {% mask_user user.username as display_uname %}
+                    {{ display_uname|make_list|first|upper }}
+                </div>
+                <div class="overflow-hidden" style="max-width: 90px;">
+                    <div class="text-white small fw-bold text-truncate">
+                        {% mask_user user.username %}
+                    </div>
+                    <div class="text-secondary small" style="font-size: 0.75rem;">
+                        <a href="{% url 'upload_signature' %}" class="text-secondary text-decoration-none hover-light">
+                            <i class="fas fa-pen-nib me-1"></i> Signatures
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. SCROLLABLE BODY ZONE -->
+    <div class="sidebar-body flex-grow-1" style="overflow-y: auto; overflow-x: hidden; padding-right: 4px;">
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-gauge me-2"></i> Dashboard
+                </a>
+            </li>
+
+            <div class="accordion sidebar-accordion mt-2" id="assetManagerSidebarAccordion">
+                
+                <!-- Registry Module -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingRegistry">
+                        <button class="accordion-button {% if 'asset' not in request.path %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRegistry">
+                            <i class="fas fa-box-archive me-3"></i> Asset Registry
+                        </button>
+                    </h2>
+                    <div id="collapseRegistry" class="accordion-collapse collapse {% if 'asset' in request.path %}show{% endif %}" data-bs-parent="#assetManagerSidebarAccordion">
+                        <div class="accordion-body p-0">
+                            <ul class="sub-menu">
+                                <li><a href="{% url 'asset_list' %}" class="sub-link {% if request.resolver_match.url_name == 'asset_list' %}active{% endif %}">View Master Ledger</a></li>
+                                
+                                {# DIRECT ENTRY: Restricted to specific SPMO Admin Roles (Strict Mode) #}
+                                {% if active_demo_role %}
+                                    {% if active_demo_role in 'SPMO_ADMIN,SPMO_SUPERVISOR,SPMO_INSPECTION_SUPERVISOR' %}
+                                    <li><a href="{% url 'add_asset' %}" class="sub-link {% if request.resolver_match.url_name == 'add_asset' %}active{% endif %}">Direct Entry Form</a></li>
+                                    {% endif %}
+                                {% elif user.is_superuser %}
+                                    <li><a href="{% url 'add_asset' %}" class="sub-link {% if request.resolver_match.url_name == 'add_asset' %}active{% endif %}">Direct Entry Form</a></li>
+                                {% endif %}
+
+                                {# BATCH: UNIT AO + Admins #}
+                                {% if active_demo_role != 'UNIT_HEAD' %}
+                                <li><a href="{% url 'create_batch_request' %}" class="sub-link {% if request.resolver_match.url_name == 'create_batch_request' %}active{% endif %}">Batch Register</a></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                {# Gated Group: UNIT AO and SPMO Staff can see Initiators. UNIT HEAD is excluded. #}
+                {% if active_demo_role != 'UNIT_HEAD' %}
+                <!-- Movements -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingMovement">
+                        <button class="accordion-button {% if 'transfer' not in request.path %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMovement">
+                            <i class="fas fa-exchange-alt me-3"></i> Asset Movements
+                        </button>
+                    </h2>
+                    <div id="collapseMovement" class="accordion-collapse collapse {% if 'transfer' in request.path %}show{% endif %}" data-bs-parent="#assetManagerSidebarAccordion">
+                        <div class="accordion-body p-0">
+                            <ul class="sub-menu">
+                                <li><a href="{% url 'create_transfer_request' %}" class="sub-link {% if request.resolver_match.url_name == 'create_transfer_request' %}active{% endif %}">Transfer / Reassign</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Maintenance -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingMaintenance">
+                        <button class="accordion-button {% if 'inspection' not in request.path and 'iirup' not in request.path %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMaintenance">
+                            <i class="fas fa-tools me-3"></i> Maint. & Disposal
+                        </button>
+                    </h2>
+                    <div id="collapseMaintenance" class="accordion-collapse collapse {% if 'inspection' in request.path or 'iirup' in request.path %}show{% endif %}" data-bs-parent="#assetManagerSidebarAccordion">
+                        <div class="accordion-body p-0">
+                            <ul class="sub-menu">
+                                <li><a href="{% url 'create_inspection_request' %}" class="sub-link {% if request.resolver_match.url_name == 'create_inspection_request' %}active{% endif %}">Pre-repair Inspection</a></li>
+                                <li><a href="{% url 'create_iirup_request' %}" class="sub-link {% if request.resolver_match.url_name == 'create_iirup_request' %}active{% endif %}">IIRUP</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Accountability -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingAccountability">
+                        <button class="accordion-button {% if 'loss' not in request.path and 'clearance' not in request.path %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAccountability">
+                            <i class="fas fa-balance-scale me-3"></i> Accountability
+                        </button>
+                    </h2>
+                    <div id="collapseAccountability" class="accordion-collapse collapse {% if 'loss' in request.path or 'clearance' in request.path %}show{% endif %}" data-bs-parent="#assetManagerSidebarAccordion">
+                        <div class="accordion-body p-0">
+                            <ul class="sub-menu">
+                                <li><a href="{% url 'create_loss_report' %}" class="sub-link {% if request.resolver_match.url_name == 'create_loss_report' %}active{% endif %}">Report Loss/Damage</a></li>
+                                <li><a href="{% url 'create_clearance_request' %}" class="sub-link {% if request.resolver_match.url_name == 'create_clearance_request' %}active{% endif %}">Property Clearance</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Reports (Always Visible) -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingReports">
+                        <button class="accordion-button {% if 'reports' not in request.path and 'rpcppe' not in request.path %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapseReports">
+                            <i class="fas fa-file-invoice me-3"></i> Master Reports
+                        </button>
+                    </h2>
+                    <div id="collapseReports" class="accordion-collapse collapse {% if 'reports' in request.path or 'rpcppe' in request.path %}show{% endif %}" data-bs-parent="#assetManagerSidebarAccordion">
+                        <div class="accordion-body p-0">
+                            <ul class="sub-menu">
+                                <li><a href="{% url 'reports_home' %}" class="sub-link {% if request.resolver_match.url_name == 'reports_home' %}active{% endif %}">Reports Center</a></li>
+                                <li><a href="{% url 'rpcppe_report' %}" class="sub-link {% if request.resolver_match.url_name == 'rpcppe_report' %}active{% endif %}">RPCPPE Report</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <li class="section-label mt-4">Workspace</li>
+            <li class="nav-item">
+                <a href="{% url 'transaction_history' %}" class="nav-link {% if request.resolver_match.url_name == 'transaction_history' %}active{% endif %} d-flex justify-content-between align-items-center">
+                    <div><i class="fas fa-tasks me-2"></i> Action Center</div>
+                    {% if pending_count > 0 %}<span class="badge bg-danger rounded-pill shadow-sm">{{ pending_count }}</span>{% endif %}
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'transaction_ledger' %}" class="nav-link {% if request.resolver_match.url_name == 'transaction_ledger' %}active{% endif %}">
+                    <i class="fas fa-clock-rotate-left me-2"></i> Transaction History
+                </a>
+            </li>
+
+            {% if user.is_superuser %}
+            <li class="section-label mt-4">Presentation Mode</li>
+            <li class="nav-item">
+                <div class="px-3 mb-2">
+                    <div class="form-check form-switch p-0 d-flex align-items-center justify-content-between">
+                        <label class="form-check-label text-warning small fw-bold" for="demoModeSwitch">
+                            <i class="fas fa-eye-slash me-2"></i> Demo Mode
+                        </label>
+                        <input class="form-check-input ms-0" type="checkbox" role="switch" id="demoModeSwitch" 
+                               {% if request.session.demo_mode %}checked{% endif %}
+                               onclick="window.location.href='{% url 'toggle_demo_mode' %}'">
+                    </div>
+                </div>
+            </li>
+            <li class="nav-item mb-3">
+                <div class="dropdown px-2">
+                    <button class="btn btn-sm w-100 d-flex align-items-center justify-content-between text-warning rounded-3 px-3 py-2 dropdown-toggle" 
+                            type="button" data-bs-toggle="dropdown" 
+                            style="background: rgba(255,193,7,0.05); border: 1px solid rgba(255,193,7,0.15);">
+                        <span class="text-truncate" style="max-width: 140px;">
+                            <i class="fas fa-crown me-2"></i> 
+                            {% if active_demo_role %}{{ active_demo_role }}{% else %}Master Admin{% endif %}
+                        </span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-dark shadow-lg" style="font-size: 0.85rem; min-width: 200px; max-height: 350px; overflow-y: auto;">
+                        <li><a class="dropdown-item {% if not active_demo_role %}active{% endif %}" href="{% url 'switch_persona' 'reset' %}"><i class="fas fa-crown me-2 text-warning"></i> Reset to Master</a></li>
+                        <li><hr class="dropdown-divider border-secondary opacity-25"></li>
+                        {% for role in all_roles %}
+                        <li><a class="dropdown-item {% if active_demo_role == role.code %}active{% endif %}" href="{% url 'switch_persona' role.code %}"><i class="fas fa-user-circle me-2 opacity-50"></i> {{ role.name }}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </li>
+            {% endif %}
+
+            {% if user.is_superuser %}
+            <li class="section-label mt-4">Administration</li>
+            <li class="nav-item">
+                <a href="{% url 'superadmin_command_center' %}" class="nav-link {% if 'administration/command-center' in request.path %}active{% endif %}">
+                    <i class="fas fa-shield-halved me-2"></i> 
+                    <span class="fw-bold">Command Center</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+
+    <!-- 3. FIXED FOOTER ZONE -->
+    <div class="sidebar-footer mt-auto pt-3 border-top border-secondary border-opacity-10">
+        <form action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit" class="nav-link w-100 text-start text-danger hover-danger" style="background:none; border:none;">
+                <i class="fas fa-arrow-right-from-bracket me-2"></i> Logout
+            </button>
+        </form>
+        <div class="text-center text-secondary mt-2 pb-3" style="font-size: 0.7rem; opacity: 0.5;">
+            &copy; 2025 Asset Manager v1.5
+        </div>
+    </div>
+</nav>
+
+
